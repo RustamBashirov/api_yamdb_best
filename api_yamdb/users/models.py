@@ -1,20 +1,39 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-from django.core.exceptions import ValidationError
+from django.core.validators import RegexValidator
+
+
+ADMIN = 'admin'
+MODERATOR = 'moderator'
+USER = 'user'
+ROLE_CHOICES = (
+    (ADMIN, 'Администратор'),
+    (MODERATOR, 'Модератор'),
+    (USER, 'Пользователь'),
+)
 
 
 class User(AbstractUser):
     """Модель пользователя."""
 
-    ADMIN = 'admin'
-    MODERATOR = 'moderator'
-    USER = 'user'
-    ROLE_CHOICES = (
-        (ADMIN, 'Администратор'),
-        (MODERATOR, 'Модератор'),
-        (USER, 'Пользователь'),
+    username = models.CharField(
+        'Имя пользователя',
+        max_length=150,
+        unique=True,
+        validators=[
+            RegexValidator(
+                regex=r'^(?!me$)[\w]+$',
+                message='Имя пользователя не должно быть "me"',)
+        ],
     )
-
+    email = models.EmailField('Email', max_length=254, unique=True)
+    first_name = models.CharField(max_length=150, blank=True)
+    last_name = models.CharField(max_length=150, blank=True)
+    bio = models.TextField(
+        'О себе',
+        blank=True,
+        help_text='Напишите немного о себе.',
+    )
     role = models.CharField(
         'Роль',
         max_length=10,
@@ -22,34 +41,24 @@ class User(AbstractUser):
         default=USER,
         help_text='Выберите роль пользователя.',
     )
-    bio = models.TextField(
-        'О себе',
-        blank=True,
-        help_text='Напишите немного о себе.',
+    confirmation_code = models.CharField(
+        'Код подтверждения',
+        max_length=100,
+        null=True,
     )
 
     class Meta:
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
-        ordering = ('role',)
-        constraints = [
-            models.UniqueConstraint(fields=['username'],
-                                    name='unique_username'),
-            models.UniqueConstraint(fields=['email'],
-                                    name='unique_email'),
-        ]
+        ordering = ('username',)
 
     def __str__(self):
         return self.username
 
     @property
     def is_admin(self):
-        return self.role == self.ADMIN or self.is_superuser
+        return self.role == ADMIN or self.is_superuser
 
     @property
     def is_moderator(self):
-        return self.role == self.MODERATOR
-
-    def validate_username(value):
-        if value.lower() == 'me':
-            raise ValidationError("Username 'me' is not allowed.")
+        return self.role == MODERATOR
