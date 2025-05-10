@@ -1,8 +1,10 @@
 from rest_framework import serializers
+from django.contrib.auth import get_user_model
 from django.db import IntegrityError
 
 from reviews.models import Category, Comment, Genre, Review, Title
-from users.models import User
+
+User = get_user_model()
 
 
 class RegisterDataSerializer(serializers.Serializer):

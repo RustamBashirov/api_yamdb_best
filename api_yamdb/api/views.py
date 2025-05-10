@@ -1,5 +1,3 @@
-import uuid
-
 from rest_framework import views, filters, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
@@ -7,24 +5,27 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError
 from rest_framework_simplejwt.tokens import RefreshToken
 from django_filters.rest_framework import DjangoFilterBackend
+from django.utils.crypto import get_random_string
+from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from django.core.mail import send_mail
 from django.db.models import Avg
 
 from reviews.models import Category, Genre, Review, Title
-from users.models import User
 from .filters import TitleFilter
-from .mixins import (ListCreateDestroyMixin,
-                     RetrieveListCreatePartialUpdateDestroyMixin)
-from .premissions import (IsAdmin,
-                          ReadOnly,
-                          IsAuthorOrAdminOrModeratorOrReadOnly)
-from .serializers import (
-    CategorySerializer, CommentSerializer,
-    GenreSerializer, RegisterDataSerializer,
-    ReviewSerializer, TitleSerializer, TitleWriteSerializer,
-    TokenSerializer, UserSerializer, MeSerializer
+from .mixins import (
+    ListCreateDestroyMixin, RetrieveListCreatePartialUpdateDestroyMixin
 )
+from .premissions import (
+    IsAdmin, ReadOnly, IsAuthorOrAdminOrModeratorOrReadOnly
+)
+from .serializers import (
+    CategorySerializer, CommentSerializer, GenreSerializer,
+    RegisterDataSerializer, ReviewSerializer, TitleSerializer,
+    TitleWriteSerializer, TokenSerializer, UserSerializer, MeSerializer
+)
+
+User = get_user_model()
 
 
 class RegisterView(views.APIView):
@@ -32,7 +33,7 @@ class RegisterView(views.APIView):
     def post(self, request):
         serializer = RegisterDataSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        confirmation_code = str(uuid.uuid4())
+        confirmation_code = get_random_string(length=6)
         serializer.save(confirmation_code=confirmation_code)
         send_mail(
             subject='Регистрация',
@@ -66,10 +67,8 @@ class UserViewSet(RetrieveListCreatePartialUpdateDestroyMixin):
     lookup_field = 'username'
 
     @action(
-        detail=False,
-        methods=['get', 'patch'],
-        url_path='me',
-        permission_classes=(IsAuthenticated,),
+        methods=['get', 'patch'], url_path='me', detail=False,
+        permission_classes=(IsAuthenticated,)
     )
     def user_me(self, request):
         user = request.user

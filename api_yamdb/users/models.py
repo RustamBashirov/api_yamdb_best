@@ -13,7 +13,7 @@ ROLE_CHOICES = (
 )
 
 
-class User(AbstractUser):
+class MyUser(AbstractUser):
     """Модель пользователя."""
 
     username = models.CharField(

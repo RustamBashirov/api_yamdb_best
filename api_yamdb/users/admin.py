@@ -1,6 +1,7 @@
+from django.contrib.auth import get_user_model
 from django.contrib import admin
 
-from users.models import User
+User = get_user_model()
 
 
 class UserAdmin(admin.ModelAdmin):
